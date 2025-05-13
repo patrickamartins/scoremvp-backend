@@ -160,8 +160,7 @@ def desfazer_acao(current_user):
         db.close()
 
 @app.route('/dashboard', methods=['GET'])
-@token_required
-def get_dashboard(current_user):
+def get_dashboard():
     jogo_id = request.args.get('jogo_id')
     if not jogo_id:
         return jsonify({'message': 'ID do jogo não fornecido!'}), 400
