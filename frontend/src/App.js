@@ -1,6 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 
+// Lista fixa de jogadoras
+const JOGADORAS = [
+  { id: 1, nome: "Manu" },
+  { id: 2, nome: "Bellinha" },
+  { id: 3, nome: "Sofia Alves" },
+  { id: 4, nome: "Letícia Laura" },
+  { id: 5, nome: "Laura Xavier" },
+  { id: 6, nome: "Noemi" },
+  { id: 7, nome: "Maria Luiza" },
+  { id: 8, nome: "Valentina Altfuldisk" },
+  { id: 9, nome: "Aysha" },
+  { id: 10, nome: "Duda" },
+  { id: 11, nome: "Helô" },
+  { id: 12, nome: "Aline Gomes" },
+  { id: 13, nome: "Mari Garcia" },
+  { id: 14, nome: "Valentina Soares" },
+];
+
+const TIPOS = [
+  { label: "+2", value: "+2" },
+  { label: "+3", value: "+3" },
+  { label: "+1 (lance livre)", value: "+1" },
+  { label: "Assistência", value: "Assistência" },
+  { label: "Rebote", value: "Rebote" },
+  { label: "Roubo", value: "Roubo" },
+  { label: "Toco", value: "Toco" },
+  { label: "TurnOver", value: "TurnOver" },
+  { label: "Falta", value: "Falta" },
+];
+
 // --- Login ---
 function Login() {
   const [username, setUsername] = useState("");
@@ -87,99 +117,130 @@ function Login() {
 
 // --- Estatísticas e Dashboard ---
 function Estatisticas() {
-  const [jogadoras, setJogadoras] = useState([]);
-  const [jogos, setJogos] = useState([]);
-  const [tipo, setTipo] = useState("");
-  const [idJogadora, setIdJogadora] = useState("");
-  const [idJogo, setIdJogo] = useState("");
+  // Formulário do jogo
+  const [data, setData] = useState("");
+  const [local, setLocal] = useState("");
+  const [horario, setHorario] = useState("");
+  const [adversario, setAdversario] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [jogoId, setJogoId] = useState(null);
   const [message, setMessage] = useState("");
   const [dashboard, setDashboard] = useState(null);
 
-  // Busca jogadoras e jogos ao carregar
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch("/jogadoras", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then(setJogadoras);
-
-    fetch("/jogos", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then(setJogos);
-  }, []);
-
-  // Busca dashboard ao selecionar um jogo
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (idJogo) {
-      fetch(`/dashboard?jogo_id=${idJogo}`, { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => res.json())
-        .then(setDashboard);
-    }
-  }, [idJogo]);
-
-  const handleSubmit = async (e) => {
+  // Salvar novo jogo
+  const handleSalvarJogo = async (e) => {
     e.preventDefault();
+    setMessage("");
+    const token = localStorage.getItem("token");
+    const res = await fetch("/jogos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ data, local, horario, adversario, categoria }),
+    });
+    const dataRes = await res.json();
+    if (res.ok) {
+      setJogoId(dataRes.id);
+      setMessage("Jogo salvo! Agora registre as estatísticas.");
+    } else {
+      setMessage(dataRes.message || "Erro ao salvar jogo.");
+    }
+  };
+
+  // Registrar estatística
+  const handleEstatistica = async (jogadoraId, tipo) => {
+    if (!jogoId) {
+      setMessage("Salve o jogo antes de registrar estatísticas!");
+      return;
+    }
     setMessage("");
     const token = localStorage.getItem("token");
     const res = await fetch("/estatistica", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id_jogadora: idJogadora, id_jogo: idJogo, tipo }),
+      body: JSON.stringify({ id_jogadora: jogadoraId, id_jogo: jogoId, tipo }),
     });
-    const data = await res.json();
+    const dataRes = await res.json();
     if (res.ok) {
-      setMessage("Estatística registrada com sucesso!");
-      // Atualiza o dashboard
-      fetch(`/dashboard?jogo_id=${idJogo}`, { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => res.json())
-        .then(setDashboard);
+      setMessage("Estatística registrada!");
+      atualizarDashboard();
     } else {
-      setMessage(data.message || "Erro ao registrar estatística.");
+      setMessage(dataRes.message || "Erro ao registrar estatística.");
     }
   };
 
+  // Desfazer ação
+  const desfazerAcao = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("/desfazer", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const dataRes = await res.json();
+    if (res.ok) {
+      setMessage("Ação desfeita!");
+      atualizarDashboard();
+    } else {
+      setMessage(dataRes.message || "Erro ao desfazer ação.");
+    }
+  };
+
+  // Atualizar dashboard
+  const atualizarDashboard = () => {
+    const token = localStorage.getItem("token");
+    if (jogoId) {
+      fetch(`/dashboard?jogo_id=${jogoId}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((res) => res.json())
+        .then(setDashboard);
+    }
+  };
+
+  useEffect(() => {
+    atualizarDashboard();
+    // eslint-disable-next-line
+  }, [jogoId]);
+
   return (
-    <div style={{ padding: 32, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Registrar Estatística</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: 32 }}>
-        <div style={{ marginBottom: 16 }}>
-          <label>Jogadora:</label>
-          <select value={idJogadora} onChange={e => setIdJogadora(e.target.value)} required style={{ width: "100%", padding: 8 }}>
-            <option value="">Selecione</option>
-            {jogadoras.map(j => (
-              <option key={j.id} value={j.id}>{j.nome}</option>
-            ))}
-          </select>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Jogo:</label>
-          <select value={idJogo} onChange={e => setIdJogo(e.target.value)} required style={{ width: "100%", padding: 8 }}>
-            <option value="">Selecione</option>
-            {jogos.map(j => (
-              <option key={j.id} value={j.id}>{`${j.data} - ${j.adversario}`}</option>
-            ))}
-          </select>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label>Tipo de Estatística:</label>
-          <input
-            type="text"
-            value={tipo}
-            onChange={e => setTipo(e.target.value)}
-            placeholder="Ex: Gol, Assistência, Defesa..."
-            required
-            style={{ width: "100%", padding: 8 }}
-          />
-        </div>
-        <button type="submit" style={{ padding: 10, background: "#1976d2", color: "#fff", border: "none", borderRadius: 4 }}>
-          Registrar
-        </button>
-        {message && (
-          <div style={{ marginTop: 16, color: message.includes("sucesso") ? "green" : "red" }}>
-            {message}
-          </div>
-        )}
+    <div style={{ padding: 32, maxWidth: 1200, margin: "0 auto" }}>
+      <h2>Registrar Novo Jogo</h2>
+      <form onSubmit={handleSalvarJogo} style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        <input type="date" value={data} onChange={e => setData(e.target.value)} required placeholder="Data" style={{ padding: 8 }} />
+        <input type="text" value={local} onChange={e => setLocal(e.target.value)} required placeholder="Local" style={{ padding: 8 }} />
+        <input type="time" value={horario} onChange={e => setHorario(e.target.value)} required placeholder="Horário" style={{ padding: 8 }} />
+        <input type="text" value={adversario} onChange={e => setAdversario(e.target.value)} required placeholder="Adversário" style={{ padding: 8 }} />
+        <input type="text" value={categoria} onChange={e => setCategoria(e.target.value)} required placeholder="Categoria" style={{ padding: 8 }} />
+        <button type="submit" style={{ padding: 8, background: "#1976d2", color: "#fff", border: "none", borderRadius: 4 }}>Salvar Jogo</button>
+        <button type="button" onClick={desfazerAcao} style={{ padding: 8, background: "#e53935", color: "#fff", border: "none", borderRadius: 4 }}>Desfazer</button>
       </form>
+      {message && <div style={{ marginBottom: 16, color: message.includes("sucesso") || message.includes("salvo") || message.includes("registrada") ? "green" : "red" }}>{message}</div>}
+
+      <h2>Registro de Estatísticas</h2>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 32 }}>
+        <thead>
+          <tr>
+            <th style={{ border: "1px solid #ccc", padding: 8 }}>Nome</th>
+            {TIPOS.map(tipo => (
+              <th key={tipo.value} style={{ border: "1px solid #ccc", padding: 8 }}>{tipo.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {JOGADORAS.map(jogadora => (
+            <tr key={jogadora.id}>
+              <td style={{ border: "1px solid #ccc", padding: 8 }}>{jogadora.nome}</td>
+              {TIPOS.map(tipo => (
+                <td key={tipo.value} style={{ border: "1px solid #ccc", padding: 4 }}>
+                  <button
+                    onClick={() => handleEstatistica(jogadora.id, tipo.value)}
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #1976d2", background: "#e3f2fd", cursor: "pointer" }}
+                  >
+                    {tipo.label}
+                  </button>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <h2>Dashboard do Jogo</h2>
       {dashboard ? (
@@ -198,7 +259,7 @@ function Estatisticas() {
           </ul>
         </div>
       ) : (
-        <p>Selecione um jogo para ver o dashboard.</p>
+        <p>Salve um jogo e registre estatísticas para ver o dashboard.</p>
       )}
     </div>
   );
@@ -209,6 +270,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/estatisticas" element={<Estatisticas />} />
       </Routes>
     </Router>
