@@ -30,7 +30,7 @@ const COLORS = ['#6366f1', '#f59e42', '#10b981', '#ef4444', '#fbbf24', '#3b82f6'
 
 const Dashboard: React.FC = () => {
   const [jogos, setJogos] = useState<Jogo[]>([]);
-  const [jogoSelecionado, setJogoSelecionado] = useState<number | null>(null);
+  const [jogoSelecionado, setJogoSelecionado] = useState<string>('');
   const [dados, setDados] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
         });
         setJogos(response.data);
         if (response.data.length > 0) {
-          setJogoSelecionado(response.data[response.data.length - 1].id);
+          setJogoSelecionado(String(response.data[response.data.length - 1].id));
         }
       } catch (error) {
         console.error('Erro ao buscar jogos:', error);
@@ -66,7 +66,6 @@ const Dashboard: React.FC = () => {
         setDados(null);
         return;
       }
-
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/dashboard?jogo_id=${jogoSelecionado}`, {
@@ -75,7 +74,6 @@ const Dashboard: React.FC = () => {
         setDados(response.data);
         setError('');
       } catch (error) {
-        console.error('Erro ao buscar dados do dashboard:', error);
         setError('Erro ao carregar dados do dashboard');
         setDados(null);
       }
@@ -134,8 +132,8 @@ const Dashboard: React.FC = () => {
             <select
               id="jogo"
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={jogoSelecionado || ''}
-              onChange={(e) => setJogoSelecionado(Number(e.target.value))}
+              value={jogoSelecionado}
+              onChange={(e) => setJogoSelecionado(e.target.value)}
             >
               <option value="">Selecione um jogo...</option>
               {jogos.map((jogo) => (
