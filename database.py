@@ -1,34 +1,22 @@
-# database.py
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-import os
 
-# Pegando as variáveis de ambiente corretas
-DB_USER = os.environ.get("MYSQLUSER")
-DB_PASS = os.environ.get("MYSQLPASSWORD")
-DB_HOST = os.environ.get("MYSQLHOST")
-DB_NAME = os.environ.get("MYSQLDATABASE")
-DB_PORT = os.environ.get("MYSQLPORT", "3306")
+# lê direto do plugin
+host     = os.getenv("MYSQLHOST")
+port     = int(os.getenv("MYSQLPORT", 3306))
+user     = os.getenv("MYSQLUSER")
+password = os.getenv("MYSQLPASSWORD")
+name     = os.getenv("MYSQLDATABASE")
 
-SQLALCHEMY_DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Debug: veja nos logs exatamente o que está chegando
+print("CONNECTING TO:", f"{user}@{host}:{port}/{name}")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True
+# monta a URL para o PyMySQL
+DATABASE_URL = (
+    f"mysql+pymysql://{user}:{password}"
+    f"@{host}:{port}/{name}"
 )
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-# ⬇️ IMPORTA OS MODELOS para que Base.metadata "os conheça"
-import models
-
-# ⬇️ CRIA AS TABELAS DEFINIDAS EM models.py no banco
-Base.metadata.create_all(bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
