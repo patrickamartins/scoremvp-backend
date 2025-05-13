@@ -22,10 +22,13 @@ interface DashboardData {
   destaques: Estatistica[];
 }
 
+const API_URL = 'https://scoremvp-backend-production.up.railway.app';
+
 const Dashboard: React.FC = () => {
   const [jogos, setJogos] = useState<Jogo[]>([]);
   const [jogoSelecionado, setJogoSelecionado] = useState<number | null>(null);
   const [dados, setDados] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,7 +40,7 @@ const Dashboard: React.FC = () => {
 
     const fetchJogos = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/jogos', {
+        const response = await axios.get(`${API_URL}/jogos`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setJogos(response.data);
@@ -46,6 +49,7 @@ const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar jogos:', error);
+        setError('Erro ao carregar lista de jogos');
       }
     };
 
@@ -54,16 +58,22 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchDados = async () => {
-      if (!jogoSelecionado) return;
+      if (!jogoSelecionado) {
+        setDados(null);
+        return;
+      }
 
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:5000/dashboard?jogo_id=${jogoSelecionado}`, {
+        const response = await axios.get(`${API_URL}/dashboard?jogo_id=${jogoSelecionado}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setDados(response.data);
+        setError('');
       } catch (error) {
         console.error('Erro ao buscar dados do dashboard:', error);
+        setError('Erro ao carregar dados do dashboard');
+        setDados(null);
       }
     };
 
@@ -109,6 +119,7 @@ const Dashboard: React.FC = () => {
               value={jogoSelecionado || ''}
               onChange={(e) => setJogoSelecionado(Number(e.target.value))}
             >
+              <option value="">Selecione um jogo...</option>
               {jogos.map((jogo) => (
                 <option key={jogo.id} value={jogo.id}>
                   {new Date(jogo.data).toLocaleDateString()} - {jogo.adversario}
@@ -117,7 +128,21 @@ const Dashboard: React.FC = () => {
             </select>
           </div>
 
-          {dados && (
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
+          {!jogoSelecionado ? (
+            <div className="text-center text-gray-500">
+              Selecione um jogo para ver as estatísticas
+            </div>
+          ) : !dados ? (
+            <div className="text-center text-gray-500">
+              Carregando estatísticas...
+            </div>
+          ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div className="bg-white overflow-hidden shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">

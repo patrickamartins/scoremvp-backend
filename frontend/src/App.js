@@ -311,6 +311,7 @@ function Dashboard() {
       <div style={{ marginBottom: 24 }}>
         <label>Selecione o jogo: </label>
         <select value={jogoId} onChange={e => setJogoId(e.target.value)} style={{ padding: 8 }}>
+          <option value="">Selecione...</option>
           {jogos.map(j => (
             <option key={j.id} value={j.id}>
               {`${j.data} - ${j.adversario} (${j.categoria})`}
@@ -318,7 +319,8 @@ function Dashboard() {
           ))}
         </select>
       </div>
-      {dashboard ? (
+      {!jogoId && <p>Selecione um jogo para ver o dashboard.</p>}
+      {dashboard && jogoId && (
         <div>
           <h3>Totais por tipo de estatística:</h3>
           <ul>
@@ -335,8 +337,6 @@ function Dashboard() {
             ))}
           </ul>
         </div>
-      ) : (
-        <p>Selecione um jogo para ver o dashboard.</p>
       )}
     </div>
   );
