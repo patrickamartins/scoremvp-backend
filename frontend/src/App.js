@@ -265,6 +265,83 @@ function Estatisticas() {
   );
 }
 
+function Dashboard() {
+  const [jogos, setJogos] = useState([]);
+  const [jogoId, setJogoId] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+
+  // Buscar jogos ao carregar
+  useEffect(() => {
+    fetch("/jogos", { headers: { Authorization: "" } }) // sem token
+      .then(res => res.json())
+      .then(data => {
+        setJogos(data);
+        if (data.length > 0) {
+          // Seleciona o último jogo por padrão
+          setJogoId(data[data.length - 1].id);
+        }
+      });
+  }, []);
+
+  // Buscar dashboard ao selecionar jogo
+  useEffect(() => {
+    if (jogoId) {
+      fetch(`/dashboard?jogo_id=${jogoId}`, { headers: { Authorization: "" } })
+        .then(res => res.json())
+        .then(setDashboard);
+    }
+  }, [jogoId]);
+
+  // Frases personalizadas para destaques
+  const frases = {
+    "+2": "líder em bola de 2 com",
+    "+3": "líder em bola de 3 com",
+    "+1": "destaque em lances livres com",
+    "Assistência": "lidera em assistências com",
+    "Rebote": "destaque em rebotes com",
+    "Roubo": "destaque em roubos com",
+    "Toco": "destaque em tocos com",
+    "TurnOver": "lidera em turnovers com",
+    "Falta": "lidera em faltas com"
+  };
+
+  return (
+    <div style={{ padding: 32, maxWidth: 800, margin: "0 auto" }}>
+      <h2>Dashboard - Estatísticas do Jogo</h2>
+      <div style={{ marginBottom: 24 }}>
+        <label>Selecione o jogo: </label>
+        <select value={jogoId} onChange={e => setJogoId(e.target.value)} style={{ padding: 8 }}>
+          {jogos.map(j => (
+            <option key={j.id} value={j.id}>
+              {`${j.data} - ${j.adversario} (${j.categoria})`}
+            </option>
+          ))}
+        </select>
+      </div>
+      {dashboard ? (
+        <div>
+          <h3>Totais por tipo de estatística:</h3>
+          <ul>
+            {Object.entries(dashboard.totais).map(([tipo, qtd]) => (
+              <li key={tipo}>{tipo}: {qtd}</li>
+            ))}
+          </ul>
+          <h3>Destaques individuais:</h3>
+          <ul>
+            {dashboard.destaques.map((d, idx) => (
+              <li key={idx}>
+                {d.jogadora} {frases[d.tipo] || "destaque em"} {d.tipo.toLowerCase()} com {d.quantidade}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p>Selecione um jogo para ver o dashboard.</p>
+      )}
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
@@ -272,6 +349,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/estatisticas" element={<Estatisticas />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );
