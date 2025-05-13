@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 interface Jogo {
   id: number;
@@ -23,6 +26,7 @@ interface DashboardData {
 }
 
 const API_URL = 'https://scoremvp-backend-production.up.railway.app';
+const COLORS = ['#6366f1', '#f59e42', '#10b981', '#ef4444', '#fbbf24', '#3b82f6', '#a21caf', '#eab308', '#14b8a6', '#f472b6'];
 
 const Dashboard: React.FC = () => {
   const [jogos, setJogos] = useState<Jogo[]>([]);
@@ -45,7 +49,7 @@ const Dashboard: React.FC = () => {
         });
         setJogos(response.data);
         if (response.data.length > 0) {
-          setJogoSelecionado(response.data[0].id);
+          setJogoSelecionado(response.data[response.data.length - 1].id);
         }
       } catch (error) {
         console.error('Erro ao buscar jogos:', error);
@@ -84,6 +88,20 @@ const Dashboard: React.FC = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
+
+  const totaisData = dados
+    ? Object.entries(dados.totais).map(([tipo, quantidade]) => ({ tipo, quantidade }))
+    : [];
+
+  const destaquesData = dados
+    ? dados.destaques.map((d, i) => ({
+        name: d.jogadora + ' - ' + d.tipo,
+        value: d.quantidade,
+        tipo: d.tipo,
+        jogadora: d.jogadora,
+        fill: COLORS[i % COLORS.length]
+      }))
+    : [];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -143,38 +161,44 @@ const Dashboard: React.FC = () => {
               Carregando estatísticas...
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Totais
-                  </h3>
-                  <div className="mt-4">
-                    {Object.entries(dados.totais).map(([tipo, quantidade]) => (
-                      <div key={tipo} className="flex justify-between py-2">
-                        <span className="text-gray-500">{tipo}</span>
-                        <span className="font-medium">{quantidade}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2">
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  Totais por Tipo de Estatística
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={totaisData}>
+                    <XAxis dataKey="tipo" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="quantidade" fill="#6366f1" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
 
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Destaques
-                  </h3>
-                  <div className="mt-4">
-                    {dados.destaques.map((destaque) => (
-                      <div key={destaque.tipo} className="py-2">
-                        <p className="text-sm text-gray-500">
-                          {destaque.jogadora} lidera em {destaque.tipo} com {destaque.quantidade}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="bg-white overflow-hidden shadow rounded-lg p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  Destaques Individuais
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={destaquesData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {destaquesData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
