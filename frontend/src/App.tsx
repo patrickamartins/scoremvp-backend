@@ -7,12 +7,12 @@ import RegistroEstatisticas from './components/RegistroEstatisticas';
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/registro" element={<RegistroEstatisticas />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-      </Routes>
+<Routes>
+  <Route path="/login" element={<Login />} />
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/estatisticas" element={<RegistroEstatisticas />} />
+  <Route path="/" element={<Navigate to="/login" replace />} />
+</Routes>
     </Router>
   );
 };
