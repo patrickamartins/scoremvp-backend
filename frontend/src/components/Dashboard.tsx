@@ -36,29 +36,19 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
     const fetchJogos = async () => {
       try {
-        const response = await axios.get(`${API_URL}/jogos`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.get(`${API_URL}/jogos`);
         setJogos(response.data);
         if (response.data.length > 0) {
           setJogoSelecionado(String(response.data[response.data.length - 1].id));
         }
       } catch (error) {
-        console.error('Erro ao buscar jogos:', error);
         setError('Erro ao carregar lista de jogos');
       }
     };
-
     fetchJogos();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     const fetchDados = async () => {
@@ -67,10 +57,7 @@ const Dashboard: React.FC = () => {
         return;
       }
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/dashboard?jogo_id=${jogoSelecionado}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.get(`${API_URL}/dashboard?jogo_id=${jogoSelecionado}`);
         setDados(response.data);
         setError('');
       } catch (error) {
@@ -78,14 +65,8 @@ const Dashboard: React.FC = () => {
         setDados(null);
       }
     };
-
     fetchDados();
   }, [jogoSelecionado]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
 
   const totaisData = dados
     ? Object.entries(dados.totais).map(([tipo, quantidade]) => ({ tipo, quantidade }))
@@ -110,14 +91,6 @@ const Dashboard: React.FC = () => {
               <div className="flex-shrink-0 flex items-center">
                 <h1 className="text-xl font-bold text-indigo-600">ScoreMVP</h1>
               </div>
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={handleLogout}
-                className="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-              >
-                Sair
-              </button>
             </div>
           </div>
         </div>

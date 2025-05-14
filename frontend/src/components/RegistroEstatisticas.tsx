@@ -152,6 +152,25 @@ const RegistroEstatisticas: React.FC = () => {
         </div>
       </nav>
 
+      {/* Botão para o dashboard, sempre visível */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '16px 0' }}>
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{
+            padding: '10px 20px',
+            background: '#6366f1',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            fontWeight: 600,
+            fontSize: 16,
+            cursor: 'pointer'
+          }}
+        >
+          Ir para Dashboard
+        </button>
+      </div>
+
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {error && (
